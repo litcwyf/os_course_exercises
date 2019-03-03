@@ -18,9 +18,29 @@
 
 - 你理解的对于类似ucore这样需要进程/虚存/文件系统的操作系统，在硬件设计上至少需要有哪些直接的支持？至少应该提供哪些功能的特权指令？
 
+硬件设计上至少需要有：MMU内存管理模块、时钟中断、文件系统的支持、CP0寄存器给出相关的信息等。
+从课件中可以了解到所需要的特权指令大概分为：
+
+Exceptions: LIDT, LTR, IRET, STI, CLI
+
+Virtual Memory: MOV CRn, INVLPG, INVPCID 
+
+Privilege Modes: SYSRET, SYSEXIT, IRET 
+
+Segmentation/Paging: LGDT, LLDT CRx: CR0, CR3
+
 - 你理解的x86的实模式和保护模式有什么区别？物理地址、线性地址、逻辑地址的含义分别是什么？
 
-- 你理解的risc-v的特权模式有什么区别？不同 模式在地址访问方面有何特征？
+实模式可访问的内存大小只有1MB（16位），而保护模式下可以访问32位（4GB）。实模式下没有分页和分段的机制，访问的地址空间即为实地址；保护模式下访问的是虚地址，可以在MMU内存管理单元中对某些关键的实地址进行保护。
+
+内存条里面的地址就是所谓物理地址，访问某个物理地址即为读出内存中某个特定位置的内容；逻辑地址是一个类似于虚拟地址一样的概念，应用程序的程序员在使用地址时使用的就是逻辑地址；线性地址是逻辑地址变换到物理地址的中间层，逻辑地址通过段机制转换为线性地址，并通过页机制转换为物理地址（页机制没有启用时线性地址即物理地址）。
+
+- 你理解的risc-v的特权模式有什么区别？不同模式在地址访问方面有何特征？
+
+risc-v的特权模式即risc-v的工作模式，分机器模式、监督模式、用户模式、Hypervisor模式四种。其中用户模式硬件必须实现。
+
+不同的模式包含不同的CSR（control and status register）。CSR通过一个12位的CSR地址进行访问控制。在不同的模式下，操作CSR地址对应的内容的权限不同的。具体的权限划分可以参考相应的资料来具体确认。
+
 
 - 理解ucore中list_entry双向链表数据结构及其4个基本操作函数和ucore中一些基于它的代码实现（此题不用填写内容）
 
@@ -39,6 +59,8 @@
     unsigned gd_off_31_16 : 16;        // high bits of offset in segment
  };
 ```
+
+冒号后的数字表示冒号前的变量在struct中所占的二进制位数。
 
 - 对于如下的代码段，
 
@@ -63,17 +85,57 @@ SETGATE(intr, 1,2,3,0);
 ```
 请问执行上述指令后， intr的值是多少？
 
+0x20003，即为gd_ss和gd_off_15_0拼接在一起的结果。
+
 ### 课堂实践练习
 
 #### 练习一
 
 1. 请在ucore中找一段你认为难度适当的AT&T格式X86汇编代码，尝试解释其含义。
 
+我选择了process文件夹中的switch.s
+
+```
+.text
+.globl switch_to
+switch_to:                      # switch_to(from, to)
+
+    # save from's registers
+    movl 4(%esp), %eax          # eax points to from
+    popl 0(%eax)                # save eip !popl
+    movl %esp, 4(%eax)
+    movl %ebx, 8(%eax)
+    movl %ecx, 12(%eax)
+    movl %edx, 16(%eax)
+    movl %esi, 20(%eax)
+    movl %edi, 24(%eax)
+    movl %ebp, 28(%eax)
+
+    # restore to's registers
+    movl 4(%esp), %eax          # not 8(%esp): popped return address already
+                                # eax now points to to
+    movl 28(%eax), %ebp
+    movl 24(%eax), %edi
+    movl 20(%eax), %esi
+    movl 16(%eax), %edx
+    movl 12(%eax), %ecx
+    movl 8(%eax), %ebx
+    movl 4(%eax), %esp
+
+    pushl 0(%eax)               # push eip
+
+    ret
+```
+这段代码需要进行的任务应该是操作系统中进程切换时，需要保存当前进程的寄存器的值，并且把要切换的进程的寄存器的值进行读入。
+栈中传入的应该是两个进程的某个暂存内容的struct的首地址，保存寄存器即把当前寄存器的值放入struct中，然后从另一个struct中读取寄存器的值。
+
 2. (option)请在rcore中找一段你认为难度适当的RV汇编代码，尝试解释其含义。
 
 #### 练习二
 
 宏定义和引用在内核代码中很常用。请枚举ucore或rcore中宏定义的用途，并举例描述其含义。
+
+例子：在ucore的memlayout.h中，KMEMSIZE作为一个常数，被#DEFINE来进行定义。此处即为起到一个定义常量、方便编写代码的作用。
 
 #### reference
  - [Intel格式和AT&T格式汇编区别](http://www.cnblogs.com/hdk1993/p/4820353.html)
