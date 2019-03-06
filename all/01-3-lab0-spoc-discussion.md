@@ -18,6 +18,7 @@
 
 - 你理解的对于类似ucore这样需要进程/虚存/文件系统的操作系统，在硬件设计上至少需要有哪些直接的支持？至少应该提供哪些功能的特权指令？
 
+
 硬件设计上至少需要有：MMU内存管理模块、时钟中断、文件系统的支持、CP0寄存器给出相关的信息等。
 从课件中可以了解到所需要的特权指令大概分为：
 
@@ -30,6 +31,7 @@ Privilege Modes: SYSRET, SYSEXIT, IRET
 Segmentation/Paging: LGDT, LLDT CRx: CR0, CR3
 
 - 你理解的x86的实模式和保护模式有什么区别？物理地址、线性地址、逻辑地址的含义分别是什么？
+
 
 实模式可访问的内存大小只有1MB（16位），而保护模式下可以访问32位（4GB）。实模式下没有分页和分段的机制，访问的地址空间即为实地址；保护模式下访问的是虚地址，可以在MMU内存管理单元中对某些关键的实地址进行保护。
 
@@ -137,9 +139,13 @@ switch_to:                      # switch_to(from, to)
 
 例子：在ucore的memlayout.h中，KMEMSIZE作为一个常数，被#DEFINE来进行定义。此处即为起到一个定义常量、方便编写代码的作用。
 
-#### reference
+
+## 参考资料
  - [Intel格式和AT&T格式汇编区别](http://www.cnblogs.com/hdk1993/p/4820353.html)
  - [x86汇编指令集  ](http://hiyyp1234.blog.163.com/blog/static/67786373200981811422948/)
  - [PC Assembly Language, Paul A. Carter, November 2003.](https://pdos.csail.mit.edu/6.828/2016/readings/pcasm-book.pdf)
  - [*Intel 80386 Programmer's Reference Manual*, 1987](https://pdos.csail.mit.edu/6.828/2016/readings/i386/toc.htm)
  - [IA-32 Intel Architecture Software Developer's Manuals](http://www.intel.com/content/www/us/en/processors/architectures-software-developer-manuals.html)
+ - [v9 cpu architecture](https://github.com/chyyuu/os_tutorial_lab/blob/master/v9_computer/docs/v9_computer.md)
+ - [RISC-V cpu architecture](http://www.riscvbook.com/chinese/)
+ - [OS相关经典论文](https://github.com/chyyuu/aos_course_info/blob/master/readinglist.md)
